@@ -31,9 +31,7 @@ class Scene2 extends Phaser.Scene {
     this.ship2.setInteractive();
     this.ship3.setInteractive();
 
-    this.input.on('gameobjectdown', this.destroyShip, this);
-
-       
+    this.input.on('gameobjectdown', this.destroyShip, this);       
     
     this.powerUps = this.physics.add.group();
 
@@ -77,6 +75,22 @@ class Scene2 extends Phaser.Scene {
 
     this.score = 0;
     this.scoreLabel = this.add.bitmapText(10, 5, "pixelFont", "SCORE ", 16);
+
+    this.beamSound = this.sound.add("audio_beam");
+    this.explosionSound = this.sound.add("audio_explosion");
+    this.pickupSound = this.sound.add("audio_pickup");
+
+    this.music = this.sound.add("music");
+    let musicConfig = {
+      mute: false,
+      volume: 1,
+      rate: 1,
+      detune: 0,
+      seek: 0,
+      loop: false,
+      delay: 0,
+    }
+    this.music.play(musicConfig);
   }  
   
   moveShip(ship, speed) {
@@ -99,24 +113,39 @@ class Scene2 extends Phaser.Scene {
 
   shootBeam() {
     let beam = new Beam(this);
+    this.beamSound.play();
   }
 
   pickPowerUp(player, powerUp) {
     powerUp.disableBody(true, true); // disable physics of powerUp, (True/True) make it inactive and hide it from display list
+    this.pickupSound.play();
   }
 
   hurtPlayer(player, enemy) {
     this.resetShipPos(enemy);
-    player.x = config.width / 2 - 8;
-    player.y = config.height - 64;
+    if(this.player.alpha < 1) {
+      return;
+    }
+    let explosion = new Explosion(this, player.x, player.y);
+    player.disableBody(true, true);
+    this.explosionSound.play();
+
+    this.time.addEvent({
+      delay: 1000,
+      callback: this.resetPlayer,
+      callbackScope: this,
+      loop: false
+    });      
   }
 
   hitEnemy(projectile, enemy) {
+    let explosion = new Explosion(this, enemy.x, enemy.y);
     projectile.destroy();    
     this.resetShipPos(enemy)
     this.score += 15
     let scoreFormatted = this.zeroPad(this.score, 6);
     this.scoreLabel.text = "SCORE " + scoreFormatted;
+    this.explosionSound.play();
   }
 
   zeroPad(number, size) {
@@ -125,6 +154,25 @@ class Scene2 extends Phaser.Scene {
       stringNumber = "0" + stringNumber;
     }
     return stringNumber;
+  }
+
+  resetPlayer() {
+    let x = config.width / 2 - 8;
+    var y = config.height + 64;
+    this.player.enableBody(true, x, y, true, true);
+    this.player.alpha = 0.5;
+
+    let tween = this.tweens.add({
+      targets: this.player, 
+      y: config.height - 64,
+      ease: "Power1",
+      duration: 1500,
+      repeat: 0,
+      onComplete: function(){
+        this.player.alpha = 1;
+      },
+      callbackScope: this
+    });
   }
 
   update() {
@@ -137,7 +185,9 @@ class Scene2 extends Phaser.Scene {
     this.movePlayerManager();
 
     if (Phaser.Input.Keyboard.JustDown(this.spacebar)) {
-      this.shootBeam();
+      if(this.player.active){
+        this.shootBeam();
+      }
     }
     for(let i = 0; i < this.projectiles.getChildren().length; i++) {
       let beam = this.projectiles.getChildren()[i];
