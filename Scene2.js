@@ -9,37 +9,16 @@ class Scene2 extends Phaser.Scene {
 
     this.ship1 = this.add.sprite(config.width / 2 - 50, config.height / 2, "ship");
     this.ship2 = this.add.sprite(config.width / 2, config.height / 2, "ship2");
-    this.ship3 = this.add.sprite(config.width / 2 + 50, config.height / 2, "ship3");
-
-    this.anims.create({
-      key: "ship1_anim",
-      frames: this.anims.generateFrameNumbers("ship"),
-      frameRate: 20,
-      repeat: -1 // this is used for an infinite loop
-    })
-    this.anims.create({
-      key: "ship2_anim",
-      frames: this.anims.generateFrameNumbers("ship2"),
-      frameRate: 20,
-      repeat: -1
-    })
-    this.anims.create({
-      key: "ship3_anim",
-      frames: this.anims.generateFrameNumbers("ship3"),
-      frameRate: 20,
-      repeat: -1
-    })
-    this.anims.create({
-      key: "explode",
-      frames: this.anims.generateFrameNumbers("explosion"),
-      frameRate: 20,
-      repeat: 0,
-      hideOnComplete: true
-    })
-
+    this.ship3 = this.add.sprite(config.width / 2 + 50, config.height / 2, "ship3");    
     this.ship1.play("ship1_anim");
     this.ship2.play("ship2_anim");
     this.ship3.play("ship3_anim");
+
+    this.player = this.physics.add.sprite(config.width / 2 - 8, config.height - 64, "player")
+    this.player.play("thrust");
+    this.cursorKeys = this.input.keyboard.createCursorKeys();
+    this.player.setCollideWorldBounds(true)
+    this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
     this.ship1.setInteractive();
     this.ship2.setInteractive();
@@ -50,27 +29,8 @@ class Scene2 extends Phaser.Scene {
     this.add.text(20, 20, "Playing game", {
       font: "25px Arial", 
       fill: "yellow"
-    }); 
+    });    
     
-    this.anims.create({
-      key: "red",
-      frames: this.anims.generateFrameNumbers("power-up", {
-        start: 0,
-        end: 1
-      }),
-      frameRate: 20,
-      repeat: -1
-    });
-    this.anims.create({
-      key: "gray",
-      frames: this.anims.generateFrameNumbers("power-up", {
-        start: 2,
-        end: 3
-      }),
-      frameRate: 20,
-      repeat: -1
-    });
-
     this.powerUps = this.physics.add.group();
 
     const maxObjects = 4;
@@ -89,7 +49,6 @@ class Scene2 extends Phaser.Scene {
       powerUp.setCollideWorldBounds(true);
       powerUp.setBounce(1);
     }
-
   }
 
   moveShip(ship, speed) {
@@ -116,6 +75,29 @@ class Scene2 extends Phaser.Scene {
     this.moveShip(this.ship3, 3);
 
     this.background.tilePositionY -= 0.5;
+
+    this.movePlayerManager();
+
+    if (Phaser.Input.Keyboard.JustDown(this.spacebar)) {
+      console.log("Fire!");
+    }
+  }
+
+  movePlayerManager() {
+    if (this.cursorKeys.left.isDown) {
+      this.player.setVelocityX(-gameSettings.playerSpeed)
+    } else if (this.cursorKeys.right.isDown) {
+      this.player.setVelocityX(gameSettings.playerSpeed)
+    } else {
+      this.player.setVelocityX(0)
+    }
+    if (this.cursorKeys.up.isDown) {
+      this.player.setVelocityY(-gameSettings.playerSpeed)
+    } else if (this.cursorKeys.down.isDown) {
+      this.player.setVelocityY(gameSettings.playerSpeed)
+    } else {
+      this.player.setVelocityY(0)
+    }
   }
 
 }
