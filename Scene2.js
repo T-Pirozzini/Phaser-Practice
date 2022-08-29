@@ -19,6 +19,7 @@ class Scene2 extends Phaser.Scene {
     this.cursorKeys = this.input.keyboard.createCursorKeys();
     this.player.setCollideWorldBounds(true)
     this.spacebar = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.projectiles = this.add.group();
 
     this.ship1.setInteractive();
     this.ship2.setInteractive();
@@ -69,6 +70,10 @@ class Scene2 extends Phaser.Scene {
     gameObject.play("explode");
   }
 
+  shootBeam() {
+    let beam = new Beam(this);
+  }
+
   update() {
     this.moveShip(this.ship1, 1);
     this.moveShip(this.ship2, 2);
@@ -79,10 +84,14 @@ class Scene2 extends Phaser.Scene {
     this.movePlayerManager();
 
     if (Phaser.Input.Keyboard.JustDown(this.spacebar)) {
-      console.log("Fire!");
+      this.shootBeam();
     }
-  }
-
+    for(let i = 0; i < this.projectiles.getChildren().length; i++) {
+      let beam = this.projectiles.getChildren()[i];
+      beam.update();
+    }
+  } 
+  
   movePlayerManager() {
     if (this.cursorKeys.left.isDown) {
       this.player.setVelocityX(-gameSettings.playerSpeed)
